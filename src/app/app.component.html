@@ -1,0 +1,213 @@
+<mat-spinner *ngIf="loading" class="spinner"></mat-spinner>
+<div class="main-container" [style.visibility]="(loading) ? 'hidden' : 'visible' ">
+
+  <div class="top-container">
+    <div class="top-left-container">
+      <h2 class="header">
+        <img src="../assets/icon.svg" class="header-icon"/>
+        GasBoard
+      </h2>
+      <div *ngIf="multiContentByCountry.length == 0" class="no-data-left-top-container">
+        <div class="no-data-left-top-content">
+          <mat-icon class="no-data-icon">error_outline</mat-icon>
+          <span>Нет данных для отображения диаграммы</span>
+        </div>
+      </div>
+      <ngx-charts-line-chart
+        class="line-chart"
+        *ngIf="countryChosen && multiContentByCountry.length != 0"
+        [view]="anotherView"
+        [legend]="true"
+        [showXAxisLabel]="false"
+        [showYAxisLabel]="true"
+        [xAxis]="true"
+        [yAxis]="true"
+        legendTitle=""
+        xAxisLabel="Года"
+        yAxisLabel="Млн m3"
+        [timeline]="true"
+        [results]="multiContentByCountry"
+      >
+      </ngx-charts-line-chart>
+    </div>
+
+    <mat-card class="top-center-container mat-elevation-z8">
+      <mat-card-header class="top-center-container-header">
+        <mat-card-title class="top-center-container-header-title">{{yearFrom}} - {{yearTo}}</mat-card-title>
+        <button mat-icon-button (click)="resetYears()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+
+        <button style="margin-left: auto" mat-icon-button (click)="firstPage = true" [disabled]="firstPage">
+          <mat-icon>keyboard_arrow_left</mat-icon>
+        </button>
+        <button mat-icon-button (click)="firstPage = false" [disabled]="!firstPage">
+          <mat-icon>keyboard_arrow_right</mat-icon>
+        </button>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="top-center-content">
+          <button mat-button class="year-button" *ngFor="let year of pagedYears"
+                  [ngClass]="{'active-year': yearFrom == year || yearTo == year}" (click)="changeYearToYearFrom(year)">{{year}}</button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="top-right-container mat-elevation-z8" *ngIf="countryChosen">
+      <mat-card-header class="top-right-container-header">
+        <mat-card-title class="top-right-container-header-title">
+          <div class="country-flag-container">
+            <img [src]="countryChosen?.icon" class="country-flag-container-icon"/>
+          </div>
+          {{countryChosen.country}}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-list>
+          <mat-list-item class="list-first-1">
+            <span class="flex-grow-1">Резервы</span>
+            <span>{{countryInfo?.reserves}} млн m3</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировой рейтинг</span>
+            <span>№ {{countryInfo?.reservesRank}}</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировая доля</span>
+            <span>{{countryInfo?.reservesPer}} %</span>
+          </mat-list-item>
+
+          <mat-list-item class="list-first">
+            <span class="flex-grow-1">Предложение</span>
+            <span>{{countryInfo?.production}} млн m3</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировой рейтинг</span>
+            <span>№ {{countryInfo?.productionRank}}</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировая доля</span>
+            <span>{{countryInfo?.productionPer}} %</span>
+          </mat-list-item>
+
+          <mat-list-item class="list-first">
+            <span class="flex-grow-1">Спрос</span>
+            <span>{{countryInfo?.consumption}} млн m3</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировой рейтинг</span>
+            <span>№ {{countryInfo?.consumptionRank}}</span>
+          </mat-list-item>
+          <mat-list-item class="list-second">
+            <span class="flex-grow-1">Мировая доля</span>
+            <span>{{countryInfo?.consumptionPer}} %</span>
+          </mat-list-item>
+
+        </mat-list>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-divider></mat-divider>
+  <div class="bottom-container">
+    <div class="bottom-left-container">
+      <div class="flex">
+        <span class="data-for-text">Данные за </span>
+        <mat-form-field class="year-selector">
+          <mat-select [(ngModel)]="yearChosen" (ngModelChange)="updateAll()">
+            <mat-option *ngFor="let year of years" [value]="year">{{year}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <span class="year-text"> год</span>
+      </div>
+      <mat-card class="table-container mat-elevation-z8">
+        <mat-card-content>
+          <mat-form-field class="search-selector">
+            <input matInput (keyup)="applyFilter($event)" placeholder="Поиск">
+          </mat-form-field>
+          <mat-table [dataSource]="dataSource" matSort matSortActive="reserves" matSortDirection="desc"
+                     matSortDisableClear>
+
+            <ng-container matColumnDef="country">
+              <mat-header-cell *matHeaderCellDef mat-sort-header> Страна</mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.country}} </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="production">
+              <mat-header-cell *matHeaderCellDef mat-sort-header> Предложение (млн m3)</mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.production || '-'}} </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="consumption">
+              <mat-header-cell *matHeaderCellDef mat-sort-header> Спрос (млн m3)</mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.consumption || '-'}} </mat-cell>
+            </ng-container>
+
+
+            <ng-container matColumnDef="reserves">
+              <mat-header-cell *matHeaderCellDef mat-sort-header> Резерв (млн m3)</mat-header-cell>
+              <mat-cell *matCellDef="let element"> {{element.reserves || '-'}} </mat-cell>
+            </ng-container>
+
+
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row
+              style="cursor: pointer"
+              [ngClass]="{'active-row': row.country == countryChosen.country}"
+              (click)="this.updateLineDiagram(row.id)"
+              *matRowDef="let row; columns: displayedColumns;"></mat-row>
+          </mat-table>
+          <mat-paginator [length]="dataSource.data.length" [pageSize]="5" class="table-paginator"></mat-paginator>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    <div class="bottom-right-container">
+      <div class="flex">
+        <mat-form-field class="source-selector">
+          <mat-select [(ngModel)]="sourceType">
+            <mat-option value="production">Предложение</mat-option>
+            <mat-option value="consumption">Спрос</mat-option>
+            <mat-option value="reserves">Резервы</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="charts-icons-container">
+          <button mat-button color="primary" matTooltip="Круговая диаграмма" class="chart-button"
+                  [disabled]="pieChartType" [ngClass]="{'active-chart': pieChartType}" (click)="pieChartType = !pieChartType">
+            <mat-icon>pie_chart</mat-icon>
+          </button>
+          <button mat-button color="primary" matTooltip="Гистограмма" class="chart-button" [disabled]="!pieChartType"
+                  [ngClass]="{'active-chart': !pieChartType}" (click)="pieChartType = !pieChartType">
+            <mat-icon>bar_chart</mat-icon>
+          </button>
+        </div>
+      </div>
+      <span *ngIf="sourceType === 'production'" class="top-10-text">Топ 10 стран с высоким предложением в {{yearChosen}} году</span>
+      <span *ngIf="sourceType === 'consumption'" class="top-10-text">Топ 10 стран с высоким спросом в {{yearChosen}} году</span>
+      <span *ngIf="sourceType === 'reserves'" class="top-10-text">Топ 10 стран с высоким резервом в {{yearChosen}} году</span>
+      <ngx-charts-pie-chart
+        *ngIf="pieChartType"
+        [view]="view"
+        [results]="source"
+        legendTitle=""
+        [gradient]="false"
+        [legend]="true"
+        [labels]="true"
+        [doughnut]="true">
+      </ngx-charts-pie-chart>
+      <ngx-charts-bar-vertical
+        *ngIf="!pieChartType"
+        [view]="view"
+        [results]="source"
+        legendTitle=""
+        [gradient]="false"
+        [xAxis]="true"
+        [yAxis]="true"
+        [legend]="true"
+        [showXAxisLabel]="true"
+        [showYAxisLabel]="true"
+        xAxisLabel="Страна"
+        yAxisLabel="Млн m3">
+      </ngx-charts-bar-vertical>
+    </div>
+  </div>
+</div>
