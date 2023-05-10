@@ -166,7 +166,6 @@ export class AppComponent implements OnInit, AfterViewInit {
             }
           }
         });
-      // console.log('OLOLO: ', this.gasByCountry)
       this.totalWorldContent = this.gasByCountry['Total world'];
       delete this.gasByCountry['Total world'];
       Object.keys(this.gasByCountry).forEach(key => {
@@ -258,18 +257,15 @@ export class AppComponent implements OnInit, AfterViewInit {
   updateLineDiagram(name?: string) {
     if(name) {
       this.countryChosen = this.gasByCountry[name];
-      console.log('TROLOLO: ', this.countryChosen)
     }
     let indexFrom = this.years.indexOf(this.yearFrom);
     let indexTo = this.years.indexOf(this.yearTo);
     if(!this.countryChosen.production && !this.countryChosen.consumption) {
-      console.log('OLOLO 11');
       this.multiContentByCountry = [];
       return;
     }
     let prod = null;
     let cons = null;
-    console.log('OLOLO', prod, cons);
     if(this.countryChosen.consumption) {
       // @ts-ignore
       cons = {name: "Спрос", series: this.countryChosen.consumption.map((it)=>({name: ''+it.year, value: it.value == '-' ? null : Math.round(it.value)})).slice(indexFrom, indexTo + 1).filter(it => it.value)};
@@ -279,7 +275,6 @@ export class AppComponent implements OnInit, AfterViewInit {
       prod = {name: "Предложение", series: this.countryChosen.production.map((it)=>({name: ''+it.year, value: it.value == '-' ? null : Math.round(it.value)})).slice(indexFrom + 15, indexTo + 16).filter(it => it.value)};
     }
     if(prod && cons) {
-      console.log('OLOLO', prod, cons);
       // @ts-ignore
       this.multiContentByCountry = [prod, cons];
 
